@@ -9,20 +9,22 @@ from datetime import datetime
 import time
 
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 import mysql.connector
 
 
 st.set_page_config(page_title="Youtube Data", page_icon=":alien:", layout="wide", initial_sidebar_state="auto", menu_items=None)
 
-st.title("YOUTUBE DATA HARVESTING AND WAREHOUSING")
+st.title(":red[YouTube Data] :blue[Harvesting] and :blue[Warehousing] 📡")
 
 #Connecting with Youtube API
 
 API_KEY='AIzaSyCANtUMBtBiFEDRFbmKzKY_2dXFOAi6wew'
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
-st.subheader("Fetching Data and Uploading to MongoDB Database")
+st.subheader(":orange[Fetching Data and Uploading to MongoDB Database] ⌛")
 
 #Function to get the channel_details:
 
@@ -214,10 +216,10 @@ def channel_names():
     for i in db.channel_data.find():
         ch_name.append(i['channel_name'])
     return ch_name
+
+st.subheader(":orange[Inserting Data into MySQL for further Data Analysis] ⌛")
    
 user_input =st.multiselect("Select the channel to be inserted into MySQL Tables",options = channel_names())
-
-st.subheader("Insert Data into MySQL for further Data Analysis")
 
 submit1 = st.button("Upload data into MySQL")
 
@@ -236,20 +238,16 @@ if submit1:
 
         channel_data = get_channel_details(user_input)
         
-
-        #Fetch channel_ids from from col1 mongoDb
-
-        channel_ids = col1.distinct("channel_id")
     
         #Fetching Video details:
-        def get_video_details(channel_ids):
-            query = {"channel_id":{"$in":channel_ids}}
+        def get_video_details(channel_list):
+            query = {"channel_id":{"$in":channel_list}}
             projection = {"_id":0,"video_id":1,"channel_id":1,"video_name":1,"published_date":1,"view_count":1,"like_count":1,"comment_count":1,"duration":1}
             x = col2.find(query,projection)
             video_table = pd.DataFrame(list(x))
             return video_table
 
-        video_data = get_video_details(channel_ids)
+        video_data = get_video_details(channel_list)
     
     #Fetching Comment details:
         def get_comment_details(video_ids):
@@ -303,11 +301,11 @@ if submit1:
                 print("Duplicate data found. Ignoring duplicate entries.")
             else:
                 print("An error occurred:", e)
-        st.write("Data Uploaded Successfully")
+        st.success("Data Uploaded Successfully")
         engine.dispose()
 
 
-st.subheader(":orange[Select any questions to get Insights]")
+st.subheader(":orange[Select any questions to get Insights ?]")
 
 #MySQL Database Connection:
 
@@ -335,55 +333,56 @@ questions = st.selectbox("Select any questions given below:",
 # Queries to be stored in Variables:
  
 if questions == '1. What are the names of all the videos and their corresponding channels?':
-    query1 = "select channel_name as Channel_name ,video_name as Video_names from channel_data, video_data;"
+    query1 = "select channel_name as Channel_name ,video_name as Video_names from channel_data c join video_data v on c.channel_id = v.channel_id;"
     cursor.execute(query1)
 
 #Storing the results in Pandas Dataframe:
     result = cursor.fetchall()
     table1 = pd.DataFrame(result,columns = cursor.column_names)
-    st.write(table1)
+    st.table(table1)
 
 elif questions == '2. Which channels have the most number of videos, and how many videos do they have?':
     query2 = "select channel_name,count(video_name) as Most_Number_of_Videos from video_data v join channel_data c on c.channel_id = v.channel_id group by channel_name order by count(video_name) desc;"
     cursor.execute(query2)
     result1 = cursor.fetchall()
     table2 = pd.DataFrame(result1,columns =cursor.column_names)
-    st.write(table2)
+    st.table(table2)
+    st.bar_chart(table2.set_index("channel_name"))
 
 elif questions == '3. What are the top 10 most viewed videos and their respective channels?':
     query3 = "select channel_name as Channel_name,video_name as Video_name,view_count as Top_10_Viewed_Videos from channel_data c join video_data v on c.channel_id = v.channel_id order by view_count desc limit 10;"
     cursor.execute(query3)
     result2 = cursor.fetchall()
     table3 = pd.DataFrame(result2,columns=cursor.column_names)
-    st.write(table3)
+    st.table(table3)
 
 elif questions == '4. How many comments were made on each video, and what are their corresponding video names?':
     query4 = "select channel_name as Channel_name, video_name as Video_name,comment_count as Comments_Count from video_data v join channel_data c on c.channel_id = v.channel_id order by comment_count desc;"
     cursor.execute(query4)
     result3 = cursor.fetchall()
     table4 = pd.DataFrame(result3,columns=cursor.column_names)
-    st.write(table4)
+    st.table(table4)
 
 elif questions == '5. Which videos have the highest number of likes, and what are their corresponding channel names?':
     query5 = "select channel_name as Channel_name,video_name as Video_name,like_count as Number_of_likes from video_data v join channel_data c on c.channel_id = v.channel_id order by like_count desc;"
     cursor.execute(query5)
     result4 = cursor.fetchall()
     table5 = pd.DataFrame(result4,columns=cursor.column_names)
-    st.write(table5)
+    st.table(table5)
 
 elif questions == '6. What is the total number of likes for each video, and what are their corresponding video names?':
     query6 = "select video_name as Video_name,like_count as Like_count from video_data order by like_count desc;"
     cursor.execute(query6)
     result5 = cursor.fetchall()
     table6 = pd.DataFrame(result5,columns=cursor.column_names)
-    st.write(table6)
+    st.table(table6)
 
 elif questions == '7. What is the total number of views for each channel, and what are their corresponding channel names?':
     query7 = "select channel_name as Channel_name,channel_views as Total_No_of_views from video_data v join channel_data c on c.channel_id = v.channel_id group by c.channel_id,v.channel_id order by channel_views desc;"
     cursor.execute(query7)
     result6 = cursor.fetchall()
     table7 = pd.DataFrame(result6,columns=cursor.column_names)
-    st.write(table7)
+    st.table(table7)
 
 elif questions == '8. What are the names of all the channels that have published videos in the year 2022?':
 
@@ -391,14 +390,14 @@ elif questions == '8. What are the names of all the channels that have published
     cursor.execute(query8)
     result7 = cursor.fetchall()
     table8 = pd.DataFrame(result7,columns=cursor.column_names)
-    st.write(table8)
+    st.table(table8)
 
 elif questions =='9. Which videos have the highest number of comments, and what are their corresponding channel names?':
     query9 = "select channel_name as Channel_name,video_name as Video_name,comment_count as Highest_No_of_comments from channel_data c join video_data v on c.channel_id = v.channel_id order by comment_count desc limit 10;"
     cursor.execute(query9)
     result8 = cursor.fetchall()
     table9 = pd.DataFrame(result8,columns=cursor.column_names)
-    st.write(table9)
+    st.table(table9)
 
 #Closing the Connection:
 cursor.close()
