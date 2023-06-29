@@ -269,6 +269,7 @@ if submit1:
 
         connection = mysql.connector.connect(
             host = "localhost",
+            port=3306,
             user = "root",
             password = "Sukumar1234",
             database = "youtube_data_warehousing")
