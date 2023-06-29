@@ -265,6 +265,17 @@ if submit1:
         
         sukumar.close()
 
+        #MySQL Database Connection:
+
+        connection = mysql.connector.connect(
+            host = "localhost",
+            port = 3306,
+            user = "root",
+            password = "Sukumar1234",
+            database = "youtube_data_warehousing")
+
+        cursor = connection.cursor()
+
 
         #Creating an SQLAlchemy engine to connect to the database:
         engine = create_engine('mysql+mysqlconnector://root:Sukumar1234@localhost/youtube_data_warehousing')
