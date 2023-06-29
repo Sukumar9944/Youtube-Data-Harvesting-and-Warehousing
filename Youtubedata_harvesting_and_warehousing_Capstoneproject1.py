@@ -311,6 +311,7 @@ st.subheader(":orange[Select any questions to get Insights ?]")
 
 connection = mysql.connector.connect(
         host = "localhost",
+        port=3306,
         user = "root",
         password = "Sukumar1234",
         database = "youtube_data_warehousing")
@@ -319,7 +320,7 @@ cursor = connection.cursor()
 
 questions = st.selectbox("Select any questions given below:",
 ['Click the question that you would like to query',
- '1. What are the names of all the videos and their corresponding channels?',
+'1. What are the names of all the videos and their corresponding channels?',
 '2. Which channels have the most number of videos, and how many videos do they have?',
 '3. What are the top 10 most viewed videos and their respective channels?',
 '4. How many comments were made on each video, and what are their corresponding video names?',
