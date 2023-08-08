@@ -7,8 +7,6 @@ from datetime import datetime
 import time
 
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 import mysql.connector
 
@@ -251,19 +249,20 @@ if submit1:
     
         #Fetching Comment details:
         def get_comment_details(video_ids):
-            for i in range(len(video_ids)+1):
-                query = {"video_id":{"$in":i[video_ids]}}
-                projection = {"_id":0,"comment_id":1,"video_id":1,"comment_text":1,"comment_author":1,"comment_published_date":1}
-                x = col3.find(query,projection)
-                comment_table = pd.DataFrame(list(x))
-                return comment_table
+            query = {"video_id":{"$in":video_ids}}
+            projection = {"_id":0,"comment_id":1,"video_id":1,"comment_text":1,"comment_author":1,"comment_published_date":1}
+            x = col3.find(query,projection)
+            comment_table = pd.DataFrame(list(x))
+            return comment_table
 
-        #Fetch video_ids from mongoDb
+        # #Fetch video_ids from mongoDb
 
-        video_ids = col2.distinct("video_id")
-        st.write(video_ids)
-
+        video_ids = video_data["video_id"].to_list()
+       
+        
+        
         comment_data = get_comment_details(video_ids)
+        st.write(comment_data)
         
         sukumar.close()
 
@@ -313,7 +312,7 @@ if submit1:
 
         try:
             # Attempt to insert the data
-            comment_data.to_sql('video_data', con=engine, if_exists='append', index=False, method='multi')
+            comment_data.to_sql('comment_data', con=engine, if_exists='append', index=False, method='multi')
             print("Data inserted successfully")
         except Exception as e: 
             if 'Duplicate entry' in str(e):
