@@ -1,5 +1,3 @@
-# Disable magic commands
-magicEnabled = False
 import streamlit as st
 from googleapiclient.discovery import build
 import pymongo as pg
@@ -237,6 +235,7 @@ if submit1:
             return channel_table
 
         channel_data = get_channel_details(user_input)
+        print(channel_data)
         
     
         #Fetching Video details:
@@ -248,28 +247,31 @@ if submit1:
             return video_table
 
         video_data = get_video_details(channel_list)
+        print(video_data)
     
-    #Fetching Comment details:
+        #Fetching Comment details:
         def get_comment_details(video_ids):
-            query = {"video_id":{"$in":video_ids}}
-            projection = {"_id":0,"comment_id":1,"video_id":1,"comment_text":1,"comment_author":1,"comment_published_date":1}
-            x = col3.find(query,projection)
-            comment_table = pd.DataFrame(list(x))
-            return comment_table
+            for i in range(len(video_ids)+1):
+                query = {"video_id":{"$in":i[video_ids]}}
+                projection = {"_id":0,"comment_id":1,"video_id":1,"comment_text":1,"comment_author":1,"comment_published_date":1}
+                x = col3.find(query,projection)
+                comment_table = pd.DataFrame(list(x))
+                return comment_table
 
         #Fetch video_ids from mongoDb
 
         video_ids = col2.distinct("video_id")
+        st.write(video_ids)
 
         comment_data = get_comment_details(video_ids)
         
         sukumar.close()
 
-        #MySQL Database Connection:
+    #MySQL Database Connection:
 
         connection = mysql.connector.connect(
             host = "localhost",
-            port = 3306,
+            port=3306,
             user = "root",
             password = "Sukumar1234",
             database = "youtube_data_warehousing")
@@ -291,6 +293,7 @@ if submit1:
             else:
                 print("An error occurred:", e)
 
+
     # Inserting Video data into the table using try and except method:
 
         try:
@@ -303,6 +306,22 @@ if submit1:
             else:
                 print("An error occurred:", e)
         st.success("Data Uploaded Successfully")
+
+        engine.dispose()
+
+        # Inserting comment data into the table using try and except method:
+
+        try:
+            # Attempt to insert the data
+            comment_data.to_sql('video_data', con=engine, if_exists='append', index=False, method='multi')
+            print("Data inserted successfully")
+        except Exception as e: 
+            if 'Duplicate entry' in str(e):
+                print("Duplicate data found. Ignoring duplicate entries.")
+            else:
+                print("An error occurred:", e)
+        st.success("Data Uploaded Successfully")
+
         engine.dispose()
 
 
@@ -376,7 +395,7 @@ elif questions == '5. Which videos have the highest number of likes, and what ar
     
 
 elif questions == '6. What is the total number of likes for each video, and what are their corresponding video names?':
-    query6 = "select video_name as Video_name,like_count as Like_count from video_data order by like_count desc;"
+    query6 = "select channel_name as Channel_name,video_name as Video_name,like_count as Like_count from video_data v join channel_data c on c.channel_id = v.channel_id order by like_count desc;"
     cursor.execute(query6)
     result5 = cursor.fetchall()
     table6 = pd.DataFrame(result5,columns=cursor.column_names)
@@ -405,7 +424,6 @@ elif questions =='9. Which videos have the highest number of comments, and what 
     result8 = cursor.fetchall()
     table9 = pd.DataFrame(result8,columns=cursor.column_names)
     st.table(table9)
-    st.bar_chart(table9.set_index("Channel_name"))
 
 #Closing the Connection:
 cursor.close()
